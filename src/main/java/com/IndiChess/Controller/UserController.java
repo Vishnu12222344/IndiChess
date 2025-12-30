@@ -19,10 +19,7 @@ public class UserController {
     public String helloWorld() {
         return "Hello World";
     }
-    @GetMapping("/testing")
-    public String testingUser() {
-        return "Access Granted";
-    }
+
 
     @PostMapping("/register")
     public User registerUser(@RequestBody User user) {
