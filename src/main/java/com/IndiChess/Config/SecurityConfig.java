@@ -27,13 +27,23 @@ public class SecurityConfig {
 
         http
                 .csrf(AbstractHttpConfigurer::disable)
+
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
+
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/auth/login", "/auth/register").permitAll()
+                        .requestMatchers(
+                                "/",
+                                "/login.html",
+                                "/register.html",
+                                "/test.html",
+                                "/auth/login",
+                                "/auth/register"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
+
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -50,3 +60,4 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 }
+

@@ -31,6 +31,8 @@ public class AuthController {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         return repository.save(user);
     }
+
+    // 🔒 PROTECTED ENDPOINT
     @GetMapping("/testing")
     public String testingUser() {
         return "Access Granted";
@@ -49,4 +51,5 @@ public class AuthController {
         return jwtUtil.generateToken(user.getName());
     }
 }
+
 

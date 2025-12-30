@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Protected API Test</title>
+</head>
+<body>
+
+<h2>Call Protected API</h2>
+
+<button onclick="callApi()">Call /auth/testing</button>
+
+<p id="result"></p>
+
+<script>
+    function callApi() {
+        const token = localStorage.getItem("jwt");
+
+        fetch("/auth/testing", {
+            headers: {
+                "Authorization": "Bearer " + token
+            }
+        })
+            .then(res => {
+                if (!res.ok) throw new Error("Unauthorized");
+                return res.text();
+            })
+            .then(data => {
+                document.getElementById("result").innerText = data;
+            })
+            .catch(err => {
+                document.getElementById("result").innerText = err.message;
+            });
+    }
+</script>
+
+</body>
+</html>
