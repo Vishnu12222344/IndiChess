@@ -19,21 +19,17 @@ public class UserController {
     public String helloWorld() {
         return "Hello World";
     }
-    @GetMapping("/register")
-    public String registerUser() {
-        return "user Successfully registered";
-    }
     @GetMapping("/testing")
     public String testingUser() {
         return "Access Granted";
     }
 
-//    @PostMapping("/register")
-//    public User registerUser(@RequestBody User user) {
-//
-//        // encode password before saving
-//        user.setPassword(passwordEncoder.encode(user.getPassword()));
-//
-//        return repository.save(user);
-//    }
+    @PostMapping("/register")
+    public User registerUser(@RequestBody User user) {
+
+        // encode password before saving
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+
+        return repository.save(user);
+    }
 }
