@@ -1,4 +1,9 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_BASE_URL =
+    import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
+/* =======================
+   Types
+======================= */
 
 interface LoginCredentials {
   email: string;
@@ -17,26 +22,44 @@ interface User {
   email: string;
 }
 
+/* =======================
+   Error class
+======================= */
+
 class ApiError extends Error {
-  constructor(public status: number, message: string) {
+  status: number;
+
+  constructor(status: number, message: string) {
     super(message);
+    this.status = status;
     this.name = 'ApiError';
   }
 }
 
+/* =======================
+   Helpers
+======================= */
+
 const getAuthHeaders = (): HeadersInit => {
   const token = localStorage.getItem('token');
+
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 };
 
+/* =======================
+   AUTH API
+======================= */
+
 export const authApi = {
   async login(credentials: LoginCredentials): Promise<string> {
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(credentials),
     });
 
@@ -47,14 +70,22 @@ export const authApi = {
       throw new ApiError(response.status, 'Login failed');
     }
 
+    // Backend returns RAW JWT string (not JSON)
     const token = await response.text();
+
+    if (!token) {
+      throw new ApiError(500, 'Empty token received from server');
+    }
+
     return token;
   },
 
   async register(data: RegisterData): Promise<User> {
     const response = await fetch(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(data),
     });
 
@@ -74,6 +105,13 @@ export const authApi = {
       headers: getAuthHeaders(),
     });
 
+    if (response.status === 401) {
+      // token expired / invalid
+      localStorage.removeItem('token');
+      localStorage.removeItem('userEmail');
+      throw new ApiError(401, 'Unauthorized');
+    }
+
     if (!response.ok) {
       throw new ApiError(response.status, 'Authentication test failed');
     }
@@ -81,6 +119,10 @@ export const authApi = {
     return response.text();
   },
 };
+
+/* =======================
+   USER / PUBLIC API
+======================= */
 
 export const userApi = {
   async getHello(): Promise<string> {
@@ -95,6 +137,10 @@ export const userApi = {
     return response.text();
   },
 };
+
+/* =======================
+   Exports
+======================= */
 
 export { ApiError };
 export type { LoginCredentials, RegisterData, User };

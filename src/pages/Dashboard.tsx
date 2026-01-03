@@ -133,36 +133,6 @@ export default function Dashboard() {
             ))}
           </div>
         </section>
-
-        {/* Auth Test Section */}
-        <section className="animate-fade-in" style={{ animationDelay: '600ms' }}>
-          <h2 className="text-xl font-display font-semibold mb-6">API Connection</h2>
-          <div className="card-glass">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
-                <h3 className="font-medium">Test Backend Authentication</h3>
-                <p className="text-sm text-muted-foreground">
-                  Verify your JWT token works with the backend
-                </p>
-              </div>
-              <div className="flex items-center gap-4">
-                {authTestResult && (
-                  <div className="flex items-center gap-2 text-primary">
-                    <CheckCircle className="w-5 h-5" />
-                    <span className="text-sm">{authTestResult}</span>
-                  </div>
-                )}
-                <Button
-                  variant="outline"
-                  onClick={handleTestAuth}
-                  disabled={isTestingAuth}
-                >
-                  {isTestingAuth ? 'Testing...' : 'Test Auth'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </section>
       </main>
     </div>
   );

@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from 'react';
 
 interface AuthUser {
   email: string;
@@ -15,17 +21,11 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-function parseJwt(token: string): { sub: string; exp: number } | null {
+function parseJwt(token: string): any {
   try {
     const base64Url = token.split('.')[1];
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    );
-    return JSON.parse(jsonPayload);
+    return JSON.parse(atob(base64));
   } catch {
     return null;
   }
@@ -33,7 +33,7 @@ function parseJwt(token: string): { sub: string; exp: number } | null {
 
 function isTokenExpired(token: string): boolean {
   const payload = parseJwt(token);
-  if (!payload) return true;
+  if (!payload?.exp) return true;
   return Date.now() >= payload.exp * 1000;
 }
 
@@ -42,13 +42,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userEmail');
-    setToken(null);
-    setUser(null);
-  }, []);
-
   const login = useCallback((newToken: string, email: string) => {
     localStorage.setItem('token', newToken);
     localStorage.setItem('userEmail', email);
@@ -56,56 +49,70 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser({ email });
   }, []);
 
+  const logout = useCallback(() => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userEmail');
+    setToken(null);
+    setUser(null);
+  }, []);
+
+  // Load auth from storage
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
     const storedEmail = localStorage.getItem('userEmail');
 
-    if (storedToken && storedEmail) {
-      if (isTokenExpired(storedToken)) {
-        logout();
-      } else {
-        setToken(storedToken);
-        setUser({ email: storedEmail });
-      }
+    if (storedToken && storedEmail && !isTokenExpired(storedToken)) {
+      setToken(storedToken);
+      setUser({ email: storedEmail });
+    } else {
+      logout();
     }
     setIsLoading(false);
   }, [logout]);
 
-  // Check for OAuth2 token in URL
+  // 🔥 OAuth redirect handler (FIXED)
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlToken = urlParams.get('token');
-    
-    if (urlToken) {
-      const payload = parseJwt(urlToken);
-      if (payload && !isTokenExpired(urlToken)) {
-        login(urlToken, payload.sub);
-        // Clean up URL
-        window.history.replaceState({}, document.title, window.location.pathname);
-      }
+    const params = new URLSearchParams(window.location.search);
+    const urlToken = params.get('token');
+    if (!urlToken) return;
+
+    const payload = parseJwt(urlToken);
+    if (!payload || isTokenExpired(urlToken)) {
+      logout();
+      return;
     }
-  }, [login]);
+
+    const email =
+        payload.email ||
+        payload.preferred_username ||
+        payload.sub;
+
+    login(urlToken, email);
+
+    // ✅ clean URL WITHOUT reload
+    window.history.replaceState({}, '', '/dashboard');
+  }, [login, logout]);
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        token,
-        isAuthenticated: !!token && !!user,
-        isLoading,
-        login,
-        logout,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+      <AuthContext.Provider
+          value={{
+            user,
+            token,
+            isAuthenticated: !!token && !!user,
+            isLoading,
+            login,
+            logout,
+          }}
+      >
+        {children}
+      </AuthContext.Provider>
   );
 }
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+  if (!context) {
+    throw new Error('useAuth must be used within AuthProvider');
   }
   return context;
 }
