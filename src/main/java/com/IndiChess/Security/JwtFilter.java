@@ -1,11 +1,8 @@
 package com.IndiChess.Security;
 
 import com.IndiChess.Service.UserDetailService;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.servlet.*;
+import jakarta.servlet.http.*;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,11 +14,13 @@ import java.io.IOException;
 @Component
 public class JwtFilter extends OncePerRequestFilter {
 
-    @Autowired
-    private JwtUtil jwtUtil;
+    private final JwtUtil jwtUtil;
+    private final UserDetailService userDetailService;
 
-    @Autowired
-    private UserDetailService userDetailService;
+    public JwtFilter(JwtUtil jwtUtil, UserDetailService userDetailService) {
+        this.jwtUtil = jwtUtil;
+        this.userDetailService = userDetailService;
+    }
 
     @Override
     protected void doFilterInternal(
@@ -30,31 +29,28 @@ public class JwtFilter extends OncePerRequestFilter {
             FilterChain filterChain)
             throws ServletException, IOException {
 
-        String authHeader = request.getHeader("Authorization");
+        String header = request.getHeader("Authorization");
 
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-
-            String token = authHeader.substring(7);
+        if (header != null && header.startsWith("Bearer ")) {
+            String token = header.substring(7);
 
             if (jwtUtil.validateToken(token)) {
-                String username = jwtUtil.extractUsername(token);
+                String email = jwtUtil.extractEmail(token);
 
                 UserDetails userDetails =
-                        userDetailService.loadUserByUsername(username);
+                        userDetailService.loadUserByUsername(email);
 
-                UsernamePasswordAuthenticationToken authentication =
+                UsernamePasswordAuthenticationToken auth =
                         new UsernamePasswordAuthenticationToken(
                                 userDetails,
                                 null,
                                 userDetails.getAuthorities()
                         );
 
-                SecurityContextHolder.getContext()
-                        .setAuthentication(authentication);
+                SecurityContextHolder.getContext().setAuthentication(auth);
             }
         }
 
         filterChain.doFilter(request, response);
     }
 }
-

@@ -1,55 +1,53 @@
 package com.IndiChess.Controller;
 
-
 import com.IndiChess.Model.User;
 import com.IndiChess.Repository.UserRepository;
 import com.IndiChess.Security.JwtUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
+@CrossOrigin("*")
 public class AuthController {
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
+    private final AuthenticationManager authManager;
+    private final JwtUtil jwtUtil;
+    private final UserRepository repository;
+    private final PasswordEncoder encoder;
 
-    @Autowired
-    private JwtUtil jwtUtil;
-
-    @Autowired
-    private UserRepository repository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    public AuthController(AuthenticationManager authManager,
+                          JwtUtil jwtUtil,
+                          UserRepository repository,
+                          PasswordEncoder encoder) {
+        this.authManager = authManager;
+        this.jwtUtil = jwtUtil;
+        this.repository = repository;
+        this.encoder = encoder;
+    }
 
     @PostMapping("/register")
     public User register(@RequestBody User user) {
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setPassword(encoder.encode(user.getPassword()));
         return repository.save(user);
-    }
-
-    // 🔒 PROTECTED ENDPOINT
-    @GetMapping("/testing")
-    public String testingUser() {
-        return "Access Granted";
     }
 
     @PostMapping("/login")
     public String login(@RequestBody User user) {
 
-        authenticationManager.authenticate(
+        authManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        user.getName(),
+                        user.getEmail(),
                         user.getPassword()
                 )
         );
 
-        return jwtUtil.generateToken(user.getName());
+        return jwtUtil.generateToken(user.getEmail());
+    }
+
+    @GetMapping("/testing")
+    public String testing() {
+        return "Access Granted";
     }
 }
-
-

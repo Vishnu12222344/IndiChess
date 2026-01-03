@@ -3,16 +3,13 @@ package com.IndiChess.Model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Data
 @Entity
 @Table(
         name = "users",
         uniqueConstraints = {
-                @UniqueConstraint(columnNames = "name"),
                 @UniqueConstraint(columnNames = "email")
         }
 )
@@ -21,18 +18,17 @@ import lombok.NoArgsConstructor;
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Size(min = 4, max = 50)
     @Column(nullable = false)
     private String name;
 
     @Email
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String email;
 
-    @Size(min = 8, max = 512)
+    @Size(min = 8)
     @Column(nullable = false)
     private String password;
 }
